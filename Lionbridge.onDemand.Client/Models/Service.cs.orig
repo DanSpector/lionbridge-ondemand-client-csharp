@@ -1,0 +1,319 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Xml.Linq;
+
+namespace Lionbridge.onDemand.Client
+{
+    /// <summary>
+    /// 
+    /// </summary>
+    public class Service
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        public String Name
+        {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public String Description
+        {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public String PriceDescription
+        {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public Int32 ServiceID
+        {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public IEnumerable<String> SourceLanguages
+        {
+            get
+            {
+                return this.SourceLanguagesList;
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public IEnumerable<String> TargetLanguages
+        {
+            get
+            {
+                return this.TargetLanguagesList;
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public Boolean AcceptsFiles
+        {
+            get
+            {
+                return this.ValidInputs.AcceptsFiles; 
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public Boolean AcceptsProducts
+        {
+            get
+            {
+                return this.ValidInputs.AcceptsProducts;
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public IEnumerable<String> FileExtensions
+        {
+            get
+            {
+                return this.ValidInputs.FileExtensions;
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private ValidInputs ValidInputs
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private List<String> SourceLanguagesList
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private List<String> TargetLanguagesList
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private IServicePortal APIClient
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        protected Service()
+        {
+            this.SourceLanguagesList = new List<String>();
+            this.TargetLanguagesList = new List<String>();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="element"></param>
+        /// <param name="client"></param>
+        internal Service(XElement element, IServicePortal client)
+            : this()
+        {
+
+            this.APIClient = client;
+
+            if (element != null)
+            {
+                this.ServiceID = element.GetChildValueAsInt32("ServiceID");
+
+                this.Name = element.GetChildValue("Name");
+
+                this.Description = element.GetChildValue("Description");
+
+                this.PriceDescription = element.GetChildValue("PriceDescription");
+
+                this.ValidInputs = new ValidInputs(element.Element("ValidInputs"));
+
+                XElement sourceLanguages = element.Element("SourceLanguages");
+
+                if (sourceLanguages != null)
+                {
+                    foreach (XElement sourceLanguage in sourceLanguages.Descendants("LanguageCode"))
+                    {
+                        this.SourceLanguagesList.Add(sourceLanguage.Value);
+                    }
+                }
+
+                XElement targetLanguages = element.Element("TargetLanguages");
+
+                if (targetLanguages != null)
+                {
+                    foreach (XElement targetLanguage in targetLanguages.Descendants("LanguageCode"))
+                    {
+                        this.TargetLanguagesList.Add(targetLanguage.Value);
+                    }
+                }
+            }
+
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="element"></param>
+        /// <param name="client"></param>
+        /// <returns></returns>
+        internal static IEnumerable<Service> CreateEnumerable(XElement element, APIClient client)
+        {
+            List<Service> result = new List<Service>();
+
+            foreach (XElement service in element.Elements("Service"))
+            {
+                result.Add(new Service(service, client));
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sourceLanguage"></param>
+        /// <param name="targetLanguages"></param>
+        /// <param name="currency"></param>
+        /// <param name="notificationURL"></param>
+        /// <returns></returns>
+        public TranslationOptions CreateTranslationOptions(String sourceLanguage, IEnumerable<String> targetLanguages, String currency, String notificationURL = null)
+        {
+            if (!this.SourceLanguages.Contains(sourceLanguage))
+            {
+                throw new ArgumentOutOfRangeException("sourceLanguage", sourceLanguage, "Source language must be in the Service's list of source languages");
+            }
+
+            if (targetLanguages == null)
+            {
+                throw new ArgumentNullException("targetLanguages", "Target languages cannot be null");
+            }
+
+            if (targetLanguages.Count() == 0)
+            {
+                throw new ArgumentOutOfRangeException("targetLanguages", "Must include at least one target language");
+            }
+
+            foreach (String targetLanguage in targetLanguages)
+            {
+                if (!this.TargetLanguages.Contains(targetLanguage))
+                {
+                    throw new ArgumentOutOfRangeException("targetLanguages", targetLanguage, "Target lanauges must be in the Service's list of target languages");
+                }
+            }
+
+            return new TranslationOptions(this, sourceLanguage, targetLanguages, currency, notificationURL);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="fileNames"></param>
+        /// <param name="sourceLanguage"></param>
+        /// <param name="targetLanguages"></param>
+        /// <param name="currency"></param>
+        /// <param name="notificationURL"></param>
+        /// <returns></returns>
+        public FilesQuote GenerateQuote(String[] fileNames, String sourceLanguage, IEnumerable<String> targetLanguages = null, String currency = null, String notificationURL = null)
+        {
+            if (this.APIClient == null)
+            {
+                throw new InvalidOperationException("The service does not have an APIClient to communicate with");
+            }
+
+            return this.APIClient.GenerateQuote(this, fileNames, sourceLanguage, targetLanguages, currency, notificationURL);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="files"></param>
+        /// <param name="sourceLanguage"></param>
+        /// <param name="targetLanguages"></param>
+        /// <param name="currency"></param>
+        /// <param name="notificationURL"></param>
+        /// <returns></returns>
+        public FilesQuote GenerateQuote(IEnumerable<File> files, String sourceLanguage, IEnumerable<String> targetLanguages = null, String currency = null, String notificationURL = null)
+        {
+            if (this.APIClient == null)
+            {
+                throw new InvalidOperationException("The service does not have an APIClient to communicate with");
+            }
+
+            return this.APIClient.GenerateQuote(this, files, sourceLanguage, targetLanguages, currency, notificationURL);
+        }
+
+        /// <summary>
+<<<<<<< HEAD
+        /// Return a ProductsQuote given a list of prouducts
+        /// </summary>
+        /// <param name="products">A collection of products</param>
+        /// <param name="sourceLanguage">The source language (e.g. "en-us")</param>
+        /// <param name="targetLanguages">A collection of target languages (e.g.  { "fr-fr", "de-de" } </param>
+        /// <param name="currency">The currency</param>
+        /// <param name="notificationURL">The callback URL</param>
+        /// <returns></returns>
+        public ProductsQuote GenerateQuote(IEnumerable<Product> products, String sourceLanguage, IEnumerable<String> targetLanguages = null, String currency = null, String notificationURL = null)
+        {
+            if (this.APIClient == null)
+            {
+                throw new InvalidOperationException("The service does not have an APIClient to communicate with");
+            }
+
+            return this.APIClient.GenerateQuote(this, products, sourceLanguage, targetLanguages, currency, notificationURL);
+        }
+=======
+        /// 
+        /// </summary>
+        /// <param name="extension">With or without the "."</param>
+        /// <returns></returns>
+        public Boolean AcceptsExtension(String extension)
+        {
+            return this.FileExtensions.Contains(extension.TrimStart('.'));
+        }
+
+>>>>>>> develop
+    }
+}
