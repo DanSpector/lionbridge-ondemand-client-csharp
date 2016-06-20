@@ -378,6 +378,31 @@ namespace Lionbridge.onDemand.Client
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="languageCode"></param>
+        /// <param name="fileRejection"></param>
+        /// <returns></returns>
+        public Boolean RejectTranslation(String languageCode, FileRejection fileRejection)
+        {
+            TargetLanguage targetLanguage = this.TargetLanguages.SingleOrDefault(p => p.LanguageCode == languageCode);
+
+            if (targetLanguage == null)
+            {
+                throw new ArgumentException(string.Format("LanguageCode {0} is not one of the target languages for this file", languageCode), "languageCode");
+            }
+
+            if (this.Client == null)
+            {
+                throw new InvalidOperationException("The file does not have an APIClient to communicate with");
+            }
+
+            var file = this.Client.RejectFileTranslation(this.AssetID.ToString(), languageCode, fileRejection);
+
+            return file != null;
+        }
+
+        /// <summary>
         /// Serves as a hash function for a particular type
         /// </summary>
         /// <returns></returns>
