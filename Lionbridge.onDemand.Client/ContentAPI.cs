@@ -1335,6 +1335,58 @@ namespace Lionbridge.onDemand.Client
         }
 
         /// <summary>
+        /// Rejects the translation of a file
+        /// </summary>
+        /// <param name="assetID"></param>
+        /// <param name="languageCode"></param>
+        /// <param name="fileRejection"></param>
+        public File RejectFileTranslation(String assetID, String languageCode, FileRejection fileRejection)
+        {
+            File result = null;
+
+            if (String.IsNullOrEmpty(assetID))
+            {
+                if (assetID == null)
+                {
+                    throw new ArgumentNullException("assetID cannot be null");
+                }
+                throw new ArgumentException("asset ID cannot be empty");
+            }
+
+            if (String.IsNullOrEmpty(languageCode))
+            {
+                if (languageCode == null)
+                {
+                    throw new ArgumentNullException("languageCode cannot be null");
+                }
+                throw new ArgumentException("languageCode cannot be empty");
+            }
+
+            Uri uri = new Uri($"{this.EndPoint.AbsoluteUri}api/files/{assetID}/{languageCode}/reject");
+
+            HttpWebRequest request = this.CreateRequestPOST(uri, fileRejection);
+
+            using (HttpWebResponse response = request.GetResponseWithoutException() as HttpWebResponse)
+            {
+                if (response.StatusCode == HttpStatusCode.Accepted)
+                {
+                    using (StreamReader reader = new StreamReader(response.GetResponseStream()))
+                    {
+                        XDocument document = XDocument.Load(reader);
+
+                        result = new File(document.Element("File"), this);
+                    }
+                }
+                else
+                {
+                    this.HandleError(response);
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// Returns a list of all supported locales
         /// </summary>
         /// <returns></returns>

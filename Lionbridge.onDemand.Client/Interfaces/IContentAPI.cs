@@ -254,6 +254,14 @@ namespace Lionbridge.onDemand.Client
         /// <param name="languageCode"></param>
         /// <returns></returns>
         byte[] GetFileTranslation(String assetID, String languageCode);
+
+        /// <summary>
+        /// Rejects the translation of a file
+        /// </summary>
+        /// <param name="assetID"></param>
+        /// <param name="languageCode"></param>
+        /// <param name="fileRejection"></param>
+        File RejectFileTranslation(String assetID, String languageCode, FileRejection fileRejection);
         
         /// <summary>
         /// Returns a product

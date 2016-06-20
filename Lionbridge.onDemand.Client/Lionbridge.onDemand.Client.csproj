@@ -39,6 +39,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Definitions\Enums.cs" />
+    <Compile Include="Models\FileRejection.cs" />
     <Compile Include="Models\Internals\AddProject.cs" />
     <Compile Include="Models\Locale.cs" />
     <Compile Include="Models\Estimate.cs" />

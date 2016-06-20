@@ -241,6 +241,11 @@ namespace Lionbridge.onDemand.Client.Tests
             throw new NotImplementedException();
         }
 
+        public File RejectFileTranslation(string assetID, string languageCode, FileRejection fileRejection)
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
     }
 }
