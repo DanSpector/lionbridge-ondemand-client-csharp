@@ -1335,6 +1335,52 @@ namespace Lionbridge.onDemand.Client
         }
 
         /// <summary>
+        /// Accepts the translation of a file
+        /// </summary>
+        /// <param name="assetID"></param>
+        /// <param name="languageCode"></param>
+        public Boolean AcceptFileTranslation(String assetID, String languageCode)
+        {
+            Boolean result = false;
+
+            if (String.IsNullOrEmpty(assetID))
+            {
+                if (assetID == null)
+                {
+                    throw new ArgumentNullException("assetID cannot be null");
+                }
+                throw new ArgumentException("asset ID cannot be empty");
+            }
+
+            if (String.IsNullOrEmpty(languageCode))
+            {
+                if (languageCode == null)
+                {
+                    throw new ArgumentNullException("languageCode cannot be null");
+                }
+                throw new ArgumentException("languageCode cannot be empty");
+            }
+
+            Uri uri = new Uri($"{this.EndPoint.AbsoluteUri}api/files/{assetID}/{languageCode}/accept");
+
+            HttpWebRequest request = this.CreateRequestPOST(uri);
+
+            using (HttpWebResponse response = request.GetResponseWithoutException() as HttpWebResponse)
+            {
+                if (response.StatusCode == HttpStatusCode.Accepted)
+                {
+                    result = true;
+                }
+                else
+                {
+                    this.HandleError(response);
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// Rejects the translation of a file
         /// </summary>
         /// <param name="assetID"></param>
